@@ -44,7 +44,8 @@ def define_graph(glove_embeddings_arr):
         accuracy tensor: name="accuracy"
         loss tensor: name="loss"
 
-    RETURN: input placeholder, labels placeholder, optimizer, accuracy and loss
+    RETURN: input placeholder, labels placeholder, dropout_keep_prob, optimizer, accuracy and loss
     tensors"""
+    dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
 
-    return input_data, labels, optimizer, accuracy, loss
+    return input_data, labels, dropout_keep_prob, optimizer, accuracy, loss
