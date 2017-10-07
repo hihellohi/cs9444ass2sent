@@ -103,5 +103,10 @@ def define_graph(glove_embeddings_arr):
     RETURN: input placeholder, labels placeholder, dropout_keep_prob, optimizer, accuracy and loss
     tensors"""
     dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
+    embeddings = tf.convert_to_tensor(glove_embeddings_arr);
+    input_data = tf.placeholder(shape=[batch_size, 40], name="input_data")
+    word_embeddings = tf.nn.embedding_lookup(embeddings, input_data);
+
+    labels = tf.placeholder(dtype=tf.int32, shape=[batch_size, 2], name="labels")
 
     return input_data, labels, dropout_keep_prob, optimizer, accuracy, loss
