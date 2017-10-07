@@ -36,8 +36,7 @@ def read_data():
     return data
 
 def load_data(glove_dict):
-    """
-    Take reviews from text files, vectorize them, and load them into a
+    """ Take reviews from text files, vectorize them, and load them into a
     numpy array. Any preprocessing of the reviews should occur here. The first
     12500 reviews in the array should be the positive reviews, the 2nd 12500
     reviews should be the negative reviews.
@@ -78,9 +77,8 @@ def load_glove_embeddings():
     word_index_dict = {'UNK' : 0};
     embeddings = [[0] * 50];
 
-    with open("glove.6B.50d.txt",'r',encoding="utf-8") as data:
-        #if you are running on the CSE machines, you can load the glove data from here
-        #data = open("/home/cs9444/public_html/17s2/hw2/glove.6B.50d.txt",'r',encoding="utf-8")
+    #with open("glove.6B.50d.txt",'r',encoding="utf-8") as data: 
+    with open("/home/cs9444/public_html/17s2/hw2/glove.6B.50d.txt",'r',encoding="utf-8") as data:
         for line in data:
             words = line.split();
             word_index_dict[words[0]] = len(embeddings);
@@ -102,11 +100,18 @@ def define_graph(glove_embeddings_arr):
 
     RETURN: input placeholder, labels placeholder, dropout_keep_prob, optimizer, accuracy and loss
     tensors"""
+
     dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
-    embeddings = tf.convert_to_tensor(glove_embeddings_arr);
-    input_data = tf.placeholder(shape=[batch_size, 40], name="input_data")
-    word_embeddings = tf.nn.embedding_lookup(embeddings, input_data);
+
+    embeddings = tf.convert_to_tensor(glove_embeddings_arr); #[vocab, 50]
+    input_data = tf.placeholder(shape=[batch_size, 40], name="input_data");
+    word_embeddings = tf.nn.embedding_lookup(embeddings, input_data); #[batch_size, 40, 50]
+
+    state_size = 512;
+    rnn = rnn.BasicLSTMCell(state_size);
+    outputs, states = rnn.static_rnn(rnn, word_embeddings, dtype=tf.float32);
 
     labels = tf.placeholder(dtype=tf.int32, shape=[batch_size, 2], name="labels")
+
 
     return input_data, labels, dropout_keep_prob, optimizer, accuracy, loss
