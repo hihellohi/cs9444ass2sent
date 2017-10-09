@@ -26,10 +26,23 @@ def getTrainBatch():
     arr = np.zeros([batch_size, seq_length])
     for i in range(batch_size):
         if (i % 2 == 0):
-            num = randint(0, 12499)
+            num = randint(0, 9999)
             labels.append([1, 0])
         else:
-            num = randint(12500, 24999)
+            num = randint(12500, 22499)
+            labels.append([0, 1])
+        arr[i] = training_data[num]
+    return arr, labels
+
+def getTestBatch():
+    labels = []
+    arr = np.zeros([batch_size, seq_length])
+    for i in range(batch_size):
+        if (i % 2 == 0):
+            num = randint(10000, 12499)
+            labels.append([1, 0])
+        else:
+            num = randint(22500, 24999)
             labels.append([0, 1])
         arr[i] = training_data[num]
     return arr, labels
@@ -59,14 +72,24 @@ for i in range(iterations):
     batch_data, batch_labels = getTrainBatch()
     sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
     if (i % 50 == 0):
-        loss_value, accuracy_value, summary = sess.run(
+        loss_value, accuracy_value = sess.run(
+            [loss, accuracy],
+            {input_data: batch_data,
+             labels: batch_labels,
+             dropout_keep_prob: 1})
+
+        batch_data, batch_labels = getTestBatch()
+        test_loss, test_acc, test_summary = sess.run(
             [loss, accuracy, summary_op],
             {input_data: batch_data,
-             labels: batch_labels})
-        writer.add_summary(summary, i)
-        print("Iteration: ", i)
-        print("loss", loss_value)
-        print("acc", accuracy_value)
+             labels: batch_labels,
+             dropout_keep_prob: 1})
+        writer.add_summary(test_summary, i)
+
+        print("Iteration:", i)
+        print("loss", loss_value, "test", test_loss)
+        print("acc", accuracy_value, "test", test_acc)
+
     if (i % 10000 == 0 and i != 0):
         if not os.path.exists(checkpoints_dir):
             os.makedirs(checkpoints_dir)
