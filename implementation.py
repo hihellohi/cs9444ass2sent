@@ -109,7 +109,13 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def new_lstm(state_size, dropout_prob):
-    return tf.contrib.rnn.DropoutWrapper(tf.contrib.rnn.BasicLSTMCell(state_size), state_keep_prob=dropout_prob);
+    cell = tf.contrib.rnn.DropoutWrapper(tf.contrib.rnn.BasicLSTMCell(state_size), output_keep_prob=dropout_prob);
+    return cell;
+
+def new_ltsm_state(state_size):
+    hidden = tf.Variable(tf.zeros([batch_size, state_size]));
+    current = tf.Variable(tf.zeros([batch_size, state_size]));
+    return hidden, current;
 
 def define_graph(glove_embeddings_arr):
     """
@@ -126,10 +132,9 @@ def define_graph(glove_embeddings_arr):
     tensors"""
     state_size = 64;
     learning_rate = 0.0001;
-    momentum = 0.9;
     num_layers = 2;
 
-    dropout_keep_prob = tf.placeholder_with_default(0.5, shape=())
+    dropout_keep_prob = tf.placeholder_with_default(0.2, shape=())
 
     embeddings = tf.convert_to_tensor(glove_embeddings_arr); #[vocab, 50]
     input_data = tf.placeholder(shape=[batch_size, 40], name="input_data", dtype=tf.int32);
@@ -138,20 +143,14 @@ def define_graph(glove_embeddings_arr):
 
     fwd = new_lstm(state_size, dropout_keep_prob);
     back = new_lstm(state_size, dropout_keep_prob);
+    fwd_state = new_ltsm_state(state_size);
+    back_state = new_ltsm_state(state_size);
 
-    outputs, state1, state2 = tf.contrib.rnn.static_bidirectional_rnn(fwd, back, iterable, dtype=tf.float32);
+    outputs, state1, state2 = tf.contrib.rnn.static_bidirectional_rnn(fwd, back, iterable, fwd_state, back_state);
 
-    with tf.variable_scope('LSTM1'):
-        outputs1, state3 = tf.nn.static_rnn(new_lstm(state_size, dropout_keep_prob), outputs, dtype=tf.float32); #[batch_size, state_size] 
-    with tf.variable_scope('LSTM2'):
-        outputs2, state4 = tf.nn.static_rnn(new_lstm(state_size, dropout_keep_prob), outputs1, dtype=tf.float32); #[batch_size, state_size] 
-
-    outputs = [];
-    for output in zip(outputs1, outputs2):
-        outputs.append(tf.concat([output[0], output[1]], 1));
-
-    with tf.variable_scope('LSTM3'):
-        outputs, state5 = tf.nn.static_rnn(new_lstm(state_size, dropout_keep_prob), outputs, dtype=tf.float32); #[batch_size, state_size] 
+    rnn = tf.contrib.rnn.MultiRNNCell([new_lstm(state_size, dropout_keep_prob) for i in range(num_layers)]);
+    state = [new_ltsm_state(state_size) for i in range(num_layers)];
+    outputs, state3 = tf.contrib.rnn.static_rnn(rnn, outputs, state);
 
     output_weights = tf.Variable(tf.random_normal([state_size, 2]));
     output_bias = tf.Variable(tf.random_normal([2]));
