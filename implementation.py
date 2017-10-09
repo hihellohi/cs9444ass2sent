@@ -138,10 +138,20 @@ def define_graph(glove_embeddings_arr):
 
     fwd = new_lstm(state_size, dropout_keep_prob);
     back = new_lstm(state_size, dropout_keep_prob);
+
     outputs, state1, state2 = tf.contrib.rnn.static_bidirectional_rnn(fwd, back, iterable, dtype=tf.float32);
 
-    rnn = tf.contrib.rnn.MultiRNNCell( [new_lstm(state_size, dropout_keep_prob) for _ in range(num_layers)]);
-    outputs, states = tf.nn.static_rnn(rnn, outputs, dtype=tf.float32); #outputs[-1] has shape [batch_size, state_size] 
+    with tf.variable_scope('LSTM1'):
+        outputs1, state3 = tf.nn.static_rnn(new_lstm(state_size, dropout_keep_prob), outputs, dtype=tf.float32); #[batch_size, state_size] 
+    with tf.variable_scope('LSTM2'):
+        outputs2, state4 = tf.nn.static_rnn(new_lstm(state_size, dropout_keep_prob), outputs1, dtype=tf.float32); #[batch_size, state_size] 
+
+    outputs = [];
+    for output in zip(outputs1, outputs2):
+        outputs.append(tf.concat([output[0], output[1]], 1));
+
+    with tf.variable_scope('LSTM3'):
+        outputs, state5 = tf.nn.static_rnn(new_lstm(state_size, dropout_keep_prob), outputs, dtype=tf.float32); #[batch_size, state_size] 
 
     output_weights = tf.Variable(tf.random_normal([state_size, 2]));
     output_bias = tf.Variable(tf.random_normal([2]));
