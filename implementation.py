@@ -113,10 +113,10 @@ def new_lstm(state_size, dropout_prob):
     return cell;
 
 def new_ltsm_state(state_size):
-    #hidden = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
-    #current = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
-    hidden = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
-    current = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
+    hidden = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
+    current = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
+    #hidden = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
+    #current = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
     return hidden, current;
 
 def define_graph(glove_embeddings_arr):
@@ -132,9 +132,10 @@ def define_graph(glove_embeddings_arr):
 
     RETURN: input placeholder, labels placeholder, dropout_keep_prob, optimizer, accuracy and loss
     tensors"""
-    state_size = 8;
+    state_size = 32;
+    connected_size = 50;
     learning_rate = 0.0001;
-    num_layers = 1;
+    num_layers = 2;
 
     dropout_keep_prob = tf.placeholder_with_default(0.5, shape=())
 
@@ -154,9 +155,15 @@ def define_graph(glove_embeddings_arr):
     state = [new_ltsm_state(state_size) for i in range(num_layers)];
     outputs, state3 = tf.contrib.rnn.static_rnn(rnn, iterable, state);
 
-    output_weights = tf.Variable(tf.random_normal([state_size, 2]));
+    hidden_weights = tf.Variable(tf.random_normal([state_size, connected_size]));
+    hidden_bias = tf.Variable(tf.random_normal([connected_size]));
+    hidden = tf.nn.dropout(tf.nn.relu(tf.matmul(outputs[-1], hidden_weights) + hidden_bias), dropout_keep_prob);
+
+    residual = tf.concat([hidden, outputs[-1]], 1);
+
+    output_weights = tf.Variable(tf.random_normal([connected_size + state_size, 2]));
     output_bias = tf.Variable(tf.random_normal([2]));
-    logits = tf.matmul(outputs[-1], output_weights) + output_bias; #[batch_size, 2]
+    logits = tf.matmul(residual, output_weights) + output_bias;
 
     labels = tf.placeholder(dtype=tf.int32, shape=[batch_size, 2], name="labels")
 
