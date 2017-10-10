@@ -113,8 +113,10 @@ def new_lstm(state_size, dropout_prob):
     return cell;
 
 def new_ltsm_state(state_size):
-    hidden = tf.Variable(tf.zeros([batch_size, state_size]));
-    current = tf.Variable(tf.zeros([batch_size, state_size]));
+    #hidden = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
+    #current = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
+    hidden = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
+    current = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
     return hidden, current;
 
 def define_graph(glove_embeddings_arr):
@@ -130,27 +132,27 @@ def define_graph(glove_embeddings_arr):
 
     RETURN: input placeholder, labels placeholder, dropout_keep_prob, optimizer, accuracy and loss
     tensors"""
-    state_size = 64;
+    state_size = 8;
     learning_rate = 0.0001;
-    num_layers = 2;
+    num_layers = 1;
 
-    dropout_keep_prob = tf.placeholder_with_default(0.2, shape=())
+    dropout_keep_prob = tf.placeholder_with_default(0.5, shape=())
 
     embeddings = tf.convert_to_tensor(glove_embeddings_arr); #[vocab, 50]
     input_data = tf.placeholder(shape=[batch_size, 40], name="input_data", dtype=tf.int32);
     word_embeddings = tf.nn.embedding_lookup(embeddings, tf.transpose(input_data)); #[40, batch_size, 50]
     iterable = tf.split(tf.reshape(word_embeddings, [40*batch_size, 50]), 40, 0);
 
-    fwd = new_lstm(state_size, dropout_keep_prob);
-    back = new_lstm(state_size, dropout_keep_prob);
-    fwd_state = new_ltsm_state(state_size);
-    back_state = new_ltsm_state(state_size);
+    #fwd = new_lstm(state_size, dropout_keep_prob);
+    #back = new_lstm(state_size, dropout_keep_prob);
+    #fwd_state = new_ltsm_state(state_size);
+    #back_state = new_ltsm_state(state_size);
 
-    outputs, state1, state2 = tf.contrib.rnn.static_bidirectional_rnn(fwd, back, iterable, fwd_state, back_state);
+    #outputs, state1, state2 = tf.contrib.rnn.static_bidirectional_rnn(fwd, back, iterable, fwd_state, back_state);
 
     rnn = tf.contrib.rnn.MultiRNNCell([new_lstm(state_size, dropout_keep_prob) for i in range(num_layers)]);
     state = [new_ltsm_state(state_size) for i in range(num_layers)];
-    outputs, state3 = tf.contrib.rnn.static_rnn(rnn, outputs, state);
+    outputs, state3 = tf.contrib.rnn.static_rnn(rnn, iterable, state);
 
     output_weights = tf.Variable(tf.random_normal([state_size, 2]));
     output_bias = tf.Variable(tf.random_normal([2]));
