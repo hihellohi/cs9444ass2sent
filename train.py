@@ -26,10 +26,10 @@ def getTrainBatch():
     arr = np.zeros([batch_size, seq_length])
     for i in range(batch_size):
         if (i % 2 == 0):
-            num = randint(0, 9999)
+            num = randint(0, 11999)
             labels.append([1, 0])
         else:
-            num = randint(12500, 22499)
+            num = randint(12500, 24499)
             labels.append([0, 1])
         arr[i] = training_data[num]
     return arr, labels
@@ -39,10 +39,10 @@ def getTestBatch():
     arr = np.zeros([batch_size, seq_length])
     for i in range(batch_size):
         if (i % 2 == 0):
-            num = randint(10000, 12499)
+            num = randint(12000, 12499)
             labels.append([1, 0])
         else:
-            num = randint(22500, 24999)
+            num = randint(24500, 24999)
             labels.append([0, 1])
         arr[i] = training_data[num]
     return arr, labels
@@ -70,20 +70,18 @@ writer = tf.summary.FileWriter(logdir, sess.graph)
 
 for i in range(iterations):
     batch_data, batch_labels = getTrainBatch()
-    sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
+    sess.run(optimizer, {input_data: batch_data, labels: batch_labels, dropout_keep_prob: 0.4})
     if (i % 50 == 0):
         loss_value, accuracy_value = sess.run(
             [loss, accuracy],
             {input_data: batch_data,
-             labels: batch_labels,
-             dropout_keep_prob: 1})
+             labels: batch_labels})
 
         batch_data, batch_labels = getTestBatch()
         test_loss, test_acc, test_summary = sess.run(
             [loss, accuracy, summary_op],
             {input_data: batch_data,
-             labels: batch_labels,
-             dropout_keep_prob: 1})
+             labels: batch_labels})
         writer.add_summary(test_summary, i)
 
         print("Iteration:", i)
