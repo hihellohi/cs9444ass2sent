@@ -112,13 +112,6 @@ def new_lstm(state_size, dropout_prob):
     cell = tf.contrib.rnn.DropoutWrapper(tf.contrib.rnn.BasicLSTMCell(state_size), output_keep_prob=dropout_prob);
     return cell;
 
-def new_ltsm_state(state_size):
-    #hidden = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
-    #current = tf.tile(tf.Variable(tf.zeros([1, state_size])), [batch_size, 1]);
-    hidden = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
-    current = tf.tile(tf.zeros([1, state_size]), [batch_size, 1]);
-    return hidden, current;
-
 def define_graph(glove_embeddings_arr):
     """
     Define the tensorflow graph that forms your model. You must use at least
@@ -132,8 +125,8 @@ def define_graph(glove_embeddings_arr):
 
     RETURN: input placeholder, labels placeholder, dropout_keep_prob, optimizer, accuracy and loss
     tensors"""
-    state_size = 40;
-    learning_rate = 0.00005;
+    state_size = 16;
+    learning_rate = 0.0001;
     num_layers = 2;
 
     dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
@@ -144,7 +137,6 @@ def define_graph(glove_embeddings_arr):
     iterable = tf.split(tf.reshape(word_embeddings, [40*batch_size, 50]), 40, 0);
 
     rnn = tf.contrib.rnn.MultiRNNCell([new_lstm(state_size, dropout_keep_prob) for i in range(num_layers)]);
-    state = [new_ltsm_state(state_size) for i in range(num_layers)];
     outputs, state3 = tf.contrib.rnn.static_rnn(rnn, iterable, dtype=tf.float32);
 
     output_weights = tf.Variable(tf.random_normal([state_size, 2]));
