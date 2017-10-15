@@ -125,9 +125,9 @@ def define_graph(glove_embeddings_arr):
 
     RETURN: input placeholder, labels placeholder, dropout_keep_prob, optimizer, accuracy and loss
     tensors"""
-    state_size = 16;
+    state_size = 32;
     learning_rate = 0.0001;
-    num_layers = 2;
+    num_layers = 1;
 
     dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
 
